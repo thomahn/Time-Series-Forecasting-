@@ -1,0 +1,90 @@
+---
+title: "Untitled"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+#Importations####
+path <- "W:/Bureau/STL/Projet"
+setwd(path)
+
+datafile <- "automobiles.csv"
+data <- read.csv(datafile, sep=";")[-c(1,2,3),]
+data <- data[rev(1:nrow(data)),]
+
+colnames(data)<- c("dates","indices", "Codes")
+
+
+
+# Q2 ####
+summary(lm(auto ~ dates))
+
+require(zoo)
+dates_char <- as.character(data$dates)
+dates <- as.yearmon(seq(from=1990, to=2023+1/12, by=1/12)) #
+indices <- as.numeric(as.character(data$indices))
+auto <- zoo(indices, order.by=dates)
+dauto=diff(auto)
+d2auto=diff(dauto)
+
+plot(auto,ylim=c(0,170))
+plot(dauto,ylim=c(-60,40))
+plot(d2auto,ylim=c(-60,40))
+
+install.packages("fUnitRoots")#tests de racine unitaire plus modulables
+library(fUnitRoots)
+# require(fUnitRoots) 
+adf <- adfTest(d2auto, lag=0, type="ct") #
+adf
+
+
+# Q3 ####
+plot(auto,ylim=c(0,170))
+plot(dauto,ylim=c(-60,40))
+
+# DF tests
+Qtests <- function(series, k, fitdf=0) {
+  pvals <- apply(matrix(1:k), 1, FUN=function(l) {
+    pval <- if (l<=fitdf) NA else Box.test(series, lag=l, type="Ljung-Box", fitdf=fitdf)$p.value
+    return(c("lag"=l,"pval"=pval))
+  })
+  return(t(pvals))
+}
+?adfTest
+str(adf)
+Qtests(adf@test$lm$residuals, 24, fitdf = length(adf@test$lm$coefficients))
+#
+#
+series <- dauto; kmax <- 24; adftype="ct"
+adfTest_valid <- function(series, kmax, adftype){
+  k <- 0
+  noautocorr <- 0
+  while (noautocorr==0){
+    cat(paste0("ADF with ",k," lags: residuals OK? "))
+    adf <- adfTest(series, lags=k, type=adftype)
+    pvals <- Qtests(adf@test$lm$residuals, 24, fitdf = length(adf@test$lm$coefficients))[,2]
+    if (sum(pvals<0.05,na.rm=T)==0) {
+      noautocorr <- 1; cat("OK \n")
+    } else cat("nope \n")
+    k <- k+1
+  }
+  return(adf)
+}
+adf <- adfTest_valid(dauto,24,adftype="ct")
+#
+Qtests(adf@test$lm$residuals, 24, fitdf = length(adf@test$lm$coefficients))
+#
+adf
+#
+summary(lm(dauto ~ dates[-1]))
+#
+adf <- adfTest_valid(dauto,24,"nc")
+#
+Qtests(adf@test$lm$residuals, 24, fitdf = length(adf@test$lm$coefficients))
+adf
+# Q4 ####
+par(mfrow=c(1,2))
+pacf(dauto,24);acf(dauto,24)
