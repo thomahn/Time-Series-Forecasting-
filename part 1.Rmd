@@ -85,6 +85,31 @@ adf <- adfTest_valid(dauto,24,"nc")
 #
 Qtests(adf@test$lm$residuals, 24, fitdf = length(adf@test$lm$coefficients))
 adf
-# Q4 ####
+# Q4 ARMA ####
 par(mfrow=c(1,2))
 pacf(dauto,24);acf(dauto,24)
+
+mat <- matrix(NA,nrow=pmax+1,ncol=qmax+1) #matrice vide `a remplir
+rownames(mat) <- paste0("p=",0:pmax) #renomme les lignes
+colnames(mat) <- paste0("q=",0:qmax) #renomme les colonnes
+AICs <- mat #matrice des AIC non remplie
+BICs <- mat #matrice des BIC non remplie
+pqs <- expand.grid(0:pmax,0:qmax) #toutes les combinaisons possibles de p et q
+for (row in 1:dim(pqs)[1]){ #boucle pour chaque (p,q)
+p <- pqs[row,1] #r´ecup`ere p
+q <- pqs[row,2] #r´ecup`ere q
+estim <- try(arima(x,c(p,0,q),include.mean = F)) #tente d’estimer l’ARIMA
+AICs[p+1,q+1] <- if (class(estim)=="try-error") NA else estim$aic #assigne l’AIC
+BICs[p+1,q+1] <- if (class(estim)=="try-error") NA else BIC(estim) #assigne le BIC
+}
+AICs #affiche les AICs
+
+AICs==min(AICs)
+
+arima310 <- arima(spread,c(3,1,0),include.mean=F)
+BICs #affiche les BICs
+
+BICs==min(BICs)
+
+arima011 <- arima(spread,c(0,1,1),include.mean=F)
+# Q5 ARIMA ###
