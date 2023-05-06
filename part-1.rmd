@@ -20,17 +20,17 @@ colnames(data)<- c("dates","indices", "Codes")
 dates_char <- as.character(data$dates)
 dates <- as.yearmon(seq(from=1990, to=2023+1/12, by=1/12)) #
 indices <- as.numeric(as.character(data$indices))
-auto <- zoo(indices, order.by=dates)
+engrais <- zoo(indices, order.by=dates)
 
-summary(lm(auto ~ dates))
+summary(lm(engrais ~ dates))
 
-dauto=diff(auto)
+dengrais=diff(engrais)
 
-plot(auto,ylim=c(0,300))
-plot(dauto,ylim=c(-80,80))
+plot(engrais,ylim=c(0,300))
+plot(dengrais,ylim=c(-80,80))
 
 # Vérification de la stationnarisation ####
-adf <- adfTest(auto, lag=0, type="ct")
+adf <- adfTest(engrais, lag=0, type="ct")
 adf
 
 Qtests <- function(series, k, fitdf=0) {
@@ -57,29 +57,29 @@ return(adf)
 }
 
 
-adf <- adfTest_valid(auto,24,"ct")
-adf <- adfTest(auto, lag=6, type="ct")
+adf <- adfTest_valid(engrais,24,"ct")
+adf <- adfTest(engrais, lag=6, type="ct")
 adf
 
 
-adf <- adfTest_valid(dauto,24,"nc")
-adf <- adfTest(dauto, lag=5, type="nc")
+adf <- adfTest_valid(dengrais,24,"nc")
+adf <- adfTest(dengrais, lag=5, type="nc")
 adf
 
 
 # Courbes temporelles des deux séries ####
-plot(auto,ylim=c(0,170))
-plot(dauto,ylim=c(-60,40))
+plot(engrais,ylim=c(0,170))
+plot(dengrais,ylim=c(-60,40))
 
 
 # Détermination du modèle ARMA ####
 par(mfrow=c(1,2))
-pacf(dauto, 20)
-acf(dauto, 20)
+#pacf(dengrais, 20)
+acf(dengrais, 20)
 
 pmax=6; qmax=3
 
-x <- dauto
+x <- dengrais
 
 mat <- matrix(NA, nrow = pmax + 1, ncol = qmax + 1)
 rownames(mat) <- paste0("p=", 0:pmax)
@@ -97,11 +97,11 @@ for (row in 1:dim(pqs)[1]) {
 
 AICs
 AICs==min(AICs)
-arima213 <- arima(auto,c(2,1,3),include.mean=F)
+arima213 <- arima(engrais,c(2,1,3),include.mean=F)
 
 BICs
 BICs==min(BICs)
-arima111 <- arima(auto,c(1,1,1),include.mean=F)
+arima111 <- arima(engrais,c(1,1,1),include.mean=F)
 
 adj_r2 <- function(model){
 ss_res <- sum(model$residuals^2) #somme des residus au carre
